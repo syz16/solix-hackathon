@@ -69,7 +69,7 @@ In the first terminal:
 
 ```bash
 cd backend
-node server.js
+npm start
 ```
 
 The backend should start at `http://localhost:3001`.
