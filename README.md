@@ -1,4 +1,4 @@
-# Claude Chatbot
+# Solix Hackathon
 
 A simple AI chatbot built with React, Vite, Node.js, Express, and Anthropic's Claude API.
 
@@ -24,11 +24,9 @@ Before getting started, install:
 ### 1. Clone the repository
 
 ```bash
-git clone <YOUR_GITHUB_REPOSITORY_URL>
-cd claude-chatbot
+git clone https://github.com/syz16/solix-hackathon.git
+cd solix-hackathon
 ```
-
-Replace `<YOUR_GITHUB_REPOSITORY_URL>` with the URL of this repository.
 
 ### 2. Configure the backend
 
@@ -100,7 +98,7 @@ You can now start chatting with Claude!
 ## Project Structure
 
 ```text
-claude-chatbot/
+solix-hackathon/
 ├── README.md
 ├── .gitignore
 ├── backend/
