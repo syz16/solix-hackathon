@@ -1,0 +1,19 @@
+
+# Secrets
+.env
+.env.*
+!.env.example
+backend/.env
+
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Build output
+frontend/dist/
+
+# Local files
+.DS_Store
+
+# Temporary files
+tmp/
