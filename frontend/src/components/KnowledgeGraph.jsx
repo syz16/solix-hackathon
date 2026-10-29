@@ -6,7 +6,7 @@ import { select } from 'd3-selection';
 const W = 640, H = 480, cx = W / 2, cy = H / 2;
 const studyLabel = { rct: 'RCT', cohort: 'Cohort', cell: 'Cell', animal: 'Animal', review: 'Review' };
 const claimKindLabel = { mechanism: 'Mechanism', outcome: 'Outcome', counterargument: 'Counterargument' };
-const claimKindShort = { mechanism: 'MECH', outcome: 'OUTCOME', counterargument: 'COUNTER' };
+const claimKindShort = { mechanism: 'MECHANISM', outcome: 'OUTCOME', counterargument: 'COUNTER' };
 
 // Rough average glyph width for this UI's font, used to size circles to
 // their text instead of guessing a fixed radius and letting labels clip.
