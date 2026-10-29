@@ -51,12 +51,12 @@ function buildGraph(analysis) {
   const nodes = [
     {
       id: 'drug', kind: 'hub', data: { label: input.drug, tag: 'DRUG' },
-      r: radiusFor([[input.drug, 11, 600], ['DRUG', 8, 700]], 30, 70, 14),
+      r: radiusFor([[input.drug, 11, 600], ['DRUG', 8, 700]], 30, 70, 14) * Math.SQRT2,
       fx: cx - 90, fy: cy, x: cx - 90, y: cy,
     },
     {
       id: 'disease', kind: 'hub', data: { label: input.disease, tag: 'DISEASE' },
-      r: radiusFor([[input.disease, 11, 600], ['DISEASE', 8, 700]], 30, 70, 14),
+      r: radiusFor([[input.disease, 11, 600], ['DISEASE', 8, 700]], 30, 70, 14) * Math.SQRT2,
       fx: cx + 90, fy: cy, x: cx + 90, y: cy,
     },
     ...claims.map((c) => {
@@ -218,13 +218,19 @@ export default function KnowledgeGraph({ analysis, selectedId, onSelect }) {
           return <path key={i} data-link={i} className={`edge ${l.kind} ${dimmed ? 'dim' : ''}`} d="" />;
         })}
 
-        {hubs.map((n) => (
-          <g key={n.id} data-node={n.id} data-draggable className="node hub" transform={`translate(${n.x},${n.y})`}>
-            <circle r={n.r} />
-            <text y="-2">{n.data.label}</text>
-            <text className="hub-tag" y="14">{n.data.tag}</text>
-          </g>
-        ))}
+        {hubs.map((n) => {
+          // Diamond (rotated square) sets hubs apart from the plain circles
+          // used for claims/papers. Its inscribed half-width for label text
+          // is smaller than the half-diagonal (n.r), hence the /SQRT2.
+          const half = n.r / Math.SQRT2;
+          return (
+            <g key={n.id} data-node={n.id} data-draggable className="node hub" transform={`translate(${n.x},${n.y})`}>
+              <rect x={-half} y={-half} width={half * 2} height={half * 2} transform="rotate(45)" />
+              <text y="-2">{n.data.label}</text>
+              <text className="hub-tag" y="14">{n.data.tag}</text>
+            </g>
+          );
+        })}
 
         {claims.map((n) => {
           const { supports, challenges, short } = n.data;

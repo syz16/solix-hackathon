@@ -65,12 +65,12 @@ button { font: inherit; }
 
 .node text { fill: var(--text); font-size: 10px; text-anchor: middle; pointer-events: none; }
 
-.node.hub circle { fill: #1a1740; stroke: var(--violet); stroke-width: 2; filter: drop-shadow(0 0 10px rgba(167, 139, 250, .25)); }
+.node.hub rect { fill: #1a1740; stroke: var(--violet); stroke-width: 2; filter: drop-shadow(0 0 10px rgba(167, 139, 250, .25)); }
 .node.hub text { font-size: 11px; font-weight: 600; }
 .node.hub .hub-tag { font-size: 8px; font-weight: 700; letter-spacing: .1em; fill: var(--muted); }
 
 .node.claim .claim-core { fill: #15192b; stroke: var(--line); stroke-width: 1; }
-.node.claim .claim-ring { stroke-linecap: butt; opacity: .95; }
+.node.claim .claim-ring { stroke-linecap: butt; opacity: .95; fill: none; }
 .node.claim .claim-ring.supports { stroke: var(--cyan); }
 .node.claim .claim-ring.challenges { stroke: var(--coral); }
 .node.claim .claim-ring.neutral { stroke: var(--muted); stroke-dasharray: 3 3; opacity: .5; }
@@ -79,16 +79,16 @@ button { font: inherit; }
 
 .node.paper { cursor: pointer; transition: opacity .25s ease; }
 .node.paper.dim { opacity: .3; }
-.node.paper circle { fill: var(--panel); stroke-width: 2; transition: fill .2s ease, stroke-width .2s ease; }
-.node.paper.supports circle { stroke: var(--cyan); }
-.node.paper.challenges circle { stroke: var(--coral); }
-.node.paper.neutral circle { stroke: var(--amber); }
-.node.paper:hover circle, .node.paper:focus-visible circle, .node.paper.sel circle { fill: #1c2a45; }
-.node.paper.sel circle { stroke-width: 3; }
+.node.paper circle { stroke-width: 2; transition: fill .2s ease, stroke-width .2s ease, filter .2s ease; }
+.node.paper.supports circle { fill: var(--cyan); stroke: var(--cyan); }
+.node.paper.challenges circle { fill: var(--coral); stroke: var(--coral); }
+.node.paper.neutral circle { fill: var(--amber); stroke: var(--amber); }
+.node.paper:hover circle, .node.paper:focus-visible circle { filter: brightness(1.15); }
+.node.paper.sel circle { stroke: var(--text); stroke-width: 3; }
 .node.paper:focus { outline: none; }
 .node.paper:focus-visible circle { stroke-width: 4; }
-.node.paper .paper-type { font-size: 9px; font-weight: 700; letter-spacing: .03em; }
-.node.paper .paper-year { font-size: 8px; fill: var(--muted); }
+.node.paper .paper-type { font-size: 9px; font-weight: 700; letter-spacing: .03em; fill: #05070d; }
+.node.paper .paper-year { font-size: 8px; fill: #05070db3; }
 
 .legend { display: flex; gap: 16px; list-style: none; padding: 0; margin: 12px 0 0; color: var(--muted); font-size: 12px; flex-wrap: wrap; }
 .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; border: 2px solid; }
