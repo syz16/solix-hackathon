@@ -1,3 +1,10 @@
-:root { font-synthesis: none; text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
-html { min-width: 320px; min-height: 100%; }
+:root {
+  --bg: #070b14; --panel: #0e1524; --line: #1d2940; --text: #e6edf7; --muted: #8b9bb4;
+  --cyan: #22d3ee; --violet: #a78bfa; --amber: #fbbf24; --coral: #fb7185;
+  font-synthesis: none; text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { min-width: 320px; }
+body { margin: 0; background: var(--bg); color: var(--text); font-family: Inter, system-ui, -apple-system, sans-serif; }
 #root { min-height: 100vh; }
