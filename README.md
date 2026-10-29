@@ -2,6 +2,8 @@
 
 FalsifyRx pressure-tests drug-repurposing hypotheses. Give it a drug, a disease, and a proposed mechanism, and it searches the literature (via Europe PMC), classifies the retrieved evidence as supporting, challenging, or neutral, maps out where the hypothesis is weakest, and recommends the single experiment most likely to falsify it.
 
+[![Watch the video](https://github.com/syz16/solix-hackathon/blob/main/DEMO_VIDEO.mov)](https://github.com/syz16/solix-hackathon/blob/main/DEMO_VIDEO.mov)
+
 This is research support, not medical advice.
 
 ## How it works
