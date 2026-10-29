@@ -5,8 +5,19 @@ import { select } from 'd3-selection';
 
 const W = 640, H = 480, cx = W / 2, cy = H / 2;
 const studyLabel = { rct: 'RCT', cohort: 'Cohort', cell: 'Cell', animal: 'Animal', review: 'Review' };
-const claimGlyph = { mechanism: '⚙', outcome: '◎', counterargument: '⚡' };
-const titleOf = (t, n = 26) => (t && t.length > n ? `${t.slice(0, n - 1).trim()}…` : t);
+const claimKindLabel = { mechanism: 'Mechanism', outcome: 'Outcome', counterargument: 'Counterargument' };
+
+// Rough average glyph width for this UI's font, used to size circles to
+// their text instead of guessing a fixed radius and letting labels clip.
+const AVG_CHAR_W = 0.58;
+function textWidth(str, fontSize, weight = 400) {
+  const bump = weight >= 700 ? 1.08 : 1;
+  return (str?.length || 0) * fontSize * AVG_CHAR_W * bump;
+}
+function radiusFor(lines, minR, maxR, padding = 10) {
+  const widest = Math.max(...lines.map(([t, size, weight]) => textWidth(t, size, weight)), 0);
+  return Math.max(minR, Math.min(maxR, widest / 2 + padding));
+}
 
 function curve(x1, y1, x2, y2, bow) {
   const mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
@@ -16,15 +27,51 @@ function curve(x1, y1, x2, y2, bow) {
   return `M ${x1} ${y1} Q ${mx + nx * bow} ${my + ny * bow} ${x2} ${y2}`;
 }
 
+// SVG arc path for a ring segment, used by the claim support/challenge indicator.
+// A fraction of exactly 1 (single-relation claim) is a degenerate arc — start
+// and end angles coincide and nothing draws — so split it into two halves.
+function arcPath(r, startFrac, endFrac, strokeWidth) {
+  if (endFrac - startFrac >= 0.999) {
+    const mid = startFrac + (endFrac - startFrac) / 2;
+    return [arcPath(r, startFrac, mid, strokeWidth), arcPath(r, mid, endFrac, strokeWidth)];
+  }
+  const a0 = startFrac * 2 * Math.PI - Math.PI / 2;
+  const a1 = endFrac * 2 * Math.PI - Math.PI / 2;
+  const x0 = r * Math.cos(a0), y0 = r * Math.sin(a0);
+  const x1 = r * Math.cos(a1), y1 = r * Math.sin(a1);
+  const large = endFrac - startFrac > 0.5 ? 1 : 0;
+  return { d: `M ${x0} ${y0} A ${r} ${r} 0 ${large} 1 ${x1} ${y1}`, strokeWidth };
+}
+
 function buildGraph(analysis) {
   const { papers, claims, input } = analysis;
   const linkedPaperIds = new Set(claims.flatMap((c) => c.links.map((l) => l.paperId)));
 
   const nodes = [
-    { id: 'drug', kind: 'hub', r: 34, label: titleOf(input.drug, 16), fx: cx - 90, fy: cy, x: cx - 90, y: cy },
-    { id: 'disease', kind: 'hub', r: 34, label: titleOf(input.disease, 16), fx: cx + 90, fy: cy, x: cx + 90, y: cy },
-    ...claims.map((c) => ({ id: c.id, kind: 'claim', r: 16, data: c, x: cx + (Math.random() - 0.5) * 40, y: cy + (Math.random() - 0.5) * 40 })),
-    ...papers.map((p) => ({ id: p.id, kind: 'paper', r: 18, data: p, x: cx + (Math.random() - 0.5) * 60, y: cy + (Math.random() - 0.5) * 60 })),
+    {
+      id: 'drug', kind: 'hub', data: { label: input.drug, tag: 'DRUG' },
+      r: radiusFor([[input.drug, 11, 600], ['DRUG', 8, 700]], 30, 70, 14),
+      fx: cx - 90, fy: cy, x: cx - 90, y: cy,
+    },
+    {
+      id: 'disease', kind: 'hub', data: { label: input.disease, tag: 'DISEASE' },
+      r: radiusFor([[input.disease, 11, 600], ['DISEASE', 8, 700]], 30, 70, 14),
+      fx: cx + 90, fy: cy, x: cx + 90, y: cy,
+    },
+    ...claims.map((c) => {
+      const supports = c.links.filter((l) => l.relation === 'supports').length;
+      const challenges = c.links.filter((l) => l.relation === 'challenges').length;
+      return {
+        id: c.id, kind: 'claim', r: 17,
+        data: { ...c, supports, challenges, label: claimKindLabel[c.kind] || c.kind },
+        x: cx + (Math.random() - 0.5) * 40, y: cy + (Math.random() - 0.5) * 40,
+      };
+    }),
+    ...papers.map((p) => ({
+      id: p.id, kind: 'paper', data: p,
+      r: radiusFor([[studyLabel[p.studyType] || p.studyType, 9, 700], [String(p.year ?? ''), 8, 400]], 20, 40, 9),
+      x: cx + (Math.random() - 0.5) * 60, y: cy + (Math.random() - 0.5) * 60,
+    })),
   ];
 
   const links = [
@@ -62,7 +109,7 @@ export default function KnowledgeGraph({ analysis, selectedId, onSelect }) {
     const sim = forceSimulation(nodes)
       .force('charge', forceManyBody().strength((n) => (n.kind === 'hub' ? -420 : n.kind === 'claim' ? -220 : -170)))
       .force('link', forceLink(links).id((n) => n.id).distance((l) => (l.kind.startsWith('core') ? 110 : 85)).strength(0.9))
-      .force('collide', forceCollide().radius((n) => n.r + 10).strength(0.9))
+      .force('collide', forceCollide().radius((n) => n.r + (n.kind === 'claim' ? 26 : 10)).strength(0.9))
       .force('x', forceX(cx).strength(0.03))
       .force('y', forceY(cy).strength(0.04))
       .alpha(1)
@@ -158,7 +205,7 @@ export default function KnowledgeGraph({ analysis, selectedId, onSelect }) {
         </defs>
 
         {hubs.map((n) => (
-          <circle key={`halo-${n.id}`} data-halo={n.id} className="halo" cx={n.x} cy={n.y} r="64" fill="url(#hubGlow)" />
+          <circle key={`halo-${n.id}`} data-halo={n.id} className="halo" cx={n.x} cy={n.y} r={n.r + 30} fill="url(#hubGlow)" />
         ))}
 
         {links.map((l, i) => {
@@ -171,18 +218,36 @@ export default function KnowledgeGraph({ analysis, selectedId, onSelect }) {
         {hubs.map((n) => (
           <g key={n.id} data-node={n.id} data-draggable className="node hub" transform={`translate(${n.x},${n.y})`}>
             <circle r={n.r} />
-            <text y="-2">{n.label}</text>
-            <text className="hub-tag" y="14">{n.id === 'drug' ? 'DRUG' : 'DISEASE'}</text>
+            <text y="-2">{n.data.label}</text>
+            <text className="hub-tag" y="14">{n.data.tag}</text>
           </g>
         ))}
 
-        {claims.map((n) => (
-          <g key={n.id} data-node={n.id} data-draggable className={`node claim ${n.data.kind}`} transform={`translate(${n.x},${n.y})`}>
-            <circle r={n.r} />
-            <text className="claim-kind" y="4">{claimGlyph[n.data.kind] || '•'}</text>
-            <title>{n.data.text}</title>
-          </g>
-        ))}
+        {claims.map((n) => {
+          const { supports, challenges, label } = n.data;
+          const total = supports + challenges;
+          const ringR = n.r + 5;
+          const segs = [];
+          const pushArc = (start, end, cls) => {
+            const arc = arcPath(ringR, start, end, 3);
+            for (const a of Array.isArray(arc) ? arc : [arc]) segs.push({ ...a, cls });
+          };
+          if (total === 0) {
+            pushArc(0, 1, 'neutral');
+          } else {
+            let cursor = 0;
+            if (supports) { pushArc(cursor, cursor + supports / total, 'supports'); cursor += supports / total; }
+            if (challenges) { pushArc(cursor, cursor + challenges / total, 'challenges'); }
+          }
+          return (
+            <g key={n.id} data-node={n.id} data-draggable className={`node claim ${n.data.kind}`} transform={`translate(${n.x},${n.y})`}>
+              <circle className="claim-core" r={n.r} />
+              {segs.map((s, i) => <path key={i} className={`claim-ring ${s.cls}`} d={s.d} strokeWidth={s.strokeWidth} fill="none" />)}
+              <text className="claim-label" y={n.r + 16}>{label}</text>
+              <title>{n.data.text}</title>
+            </g>
+          );
+        })}
 
         {papers.map((n) => {
           const p = n.data;
@@ -215,11 +280,11 @@ export default function KnowledgeGraph({ analysis, selectedId, onSelect }) {
         <li><i className="supports" /> Supports</li>
         <li><i className="challenges" /> Challenges</li>
         <li><i className="neutral" /> Neutral</li>
-        <li><i className="claim-key" /> Claim</li>
+        <li><i className="claim-key" /> Claim (ring = evidence split)</li>
         <li className="legend-hint">Drag nodes to rearrange</li>
       </ul>
       <ul className="claim-list">
-        {claims.map((n) => <li key={n.id}><b>{n.data.kind}</b> {n.data.text}</li>)}
+        {claims.map((n) => <li key={n.id}><b>{n.data.label}</b> {n.data.text}</li>)}
       </ul>
     </div>
   );
