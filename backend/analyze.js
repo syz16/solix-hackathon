@@ -48,6 +48,7 @@ Respond with ONLY a single JSON object (no markdown fences, no prose) matching t
 
 Rules:
 - Use only the "papers" you were given; include every paper you were given, classified.
+- Every paper must be referenced by at least one claim's "links" — if a paper doesn't clearly support or challenge an existing claim, add a claim for it (or fold it into the closest-fitting claim) rather than leaving it unlinked.
 - Every claim link's paperId must reference a paper in your "papers" array.
 - Every nextTest.paperIds entry must reference a paper in your "papers" array.
 - Keep text concise and evidence-grounded; do not invent findings beyond what the abstract supports.
@@ -88,6 +89,20 @@ function validateShape(result, papers) {
   for (const p of result.papers) {
     if (!ids.has(p.id)) throw new Error(`Unknown paper id in output: ${p.id}`);
   }
+
+  // The model is asked to link every paper to a claim but can miss one;
+  // attach any orphaned paper to its best-fitting claim (by stance) so the
+  // graph never has to render a disconnected node.
+  const linked = new Set(result.claims.flatMap((c) => c.links.map((l) => l.paperId)));
+  const orphans = result.papers.filter((p) => !linked.has(p.id));
+  if (orphans.length && result.claims.length) {
+    for (const paper of orphans) {
+      const target =
+        result.claims.find((c) => c.links.some((l) => l.relation === paper.stance)) || result.claims[0];
+      target.links.push({ paperId: paper.id, relation: paper.stance === 'challenges' ? 'challenges' : 'supports' });
+    }
+  }
+
   return result;
 }
 
