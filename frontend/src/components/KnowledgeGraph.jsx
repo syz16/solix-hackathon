@@ -6,6 +6,7 @@ import { select } from 'd3-selection';
 const W = 640, H = 480, cx = W / 2, cy = H / 2;
 const studyLabel = { rct: 'RCT', cohort: 'Cohort', cell: 'Cell', animal: 'Animal', review: 'Review' };
 const claimKindLabel = { mechanism: 'Mechanism', outcome: 'Outcome', counterargument: 'Counterargument' };
+const claimKindShort = { mechanism: 'MECH', outcome: 'OUTCOME', counterargument: 'COUNTER' };
 
 // Rough average glyph width for this UI's font, used to size circles to
 // their text instead of guessing a fixed radius and letting labels clip.
@@ -61,9 +62,11 @@ function buildGraph(analysis) {
     ...claims.map((c) => {
       const supports = c.links.filter((l) => l.relation === 'supports').length;
       const challenges = c.links.filter((l) => l.relation === 'challenges').length;
+      const short = claimKindShort[c.kind] || (c.kind || '?').slice(0, 7).toUpperCase();
       return {
-        id: c.id, kind: 'claim', r: 17,
-        data: { ...c, supports, challenges, label: claimKindLabel[c.kind] || c.kind },
+        id: c.id, kind: 'claim',
+        r: radiusFor([[short, 8, 700]], 20, 34, 9),
+        data: { ...c, supports, challenges, label: claimKindLabel[c.kind] || c.kind, short },
         x: cx + (Math.random() - 0.5) * 40, y: cy + (Math.random() - 0.5) * 40,
       };
     }),
@@ -109,7 +112,7 @@ export default function KnowledgeGraph({ analysis, selectedId, onSelect }) {
     const sim = forceSimulation(nodes)
       .force('charge', forceManyBody().strength((n) => (n.kind === 'hub' ? -420 : n.kind === 'claim' ? -220 : -170)))
       .force('link', forceLink(links).id((n) => n.id).distance((l) => (l.kind.startsWith('core') ? 110 : 85)).strength(0.9))
-      .force('collide', forceCollide().radius((n) => n.r + (n.kind === 'claim' ? 26 : 10)).strength(0.9))
+      .force('collide', forceCollide().radius((n) => n.r + 10).strength(0.9))
       .force('x', forceX(cx).strength(0.03))
       .force('y', forceY(cy).strength(0.04))
       .alpha(1)
@@ -224,7 +227,7 @@ export default function KnowledgeGraph({ analysis, selectedId, onSelect }) {
         ))}
 
         {claims.map((n) => {
-          const { supports, challenges, label } = n.data;
+          const { supports, challenges, short } = n.data;
           const total = supports + challenges;
           const ringR = n.r + 5;
           const segs = [];
@@ -243,7 +246,7 @@ export default function KnowledgeGraph({ analysis, selectedId, onSelect }) {
             <g key={n.id} data-node={n.id} data-draggable className={`node claim ${n.data.kind}`} transform={`translate(${n.x},${n.y})`}>
               <circle className="claim-core" r={n.r} />
               {segs.map((s, i) => <path key={i} className={`claim-ring ${s.cls}`} d={s.d} strokeWidth={s.strokeWidth} fill="none" />)}
-              <text className="claim-label" y={n.r + 16}>{label}</text>
+              <text className="claim-label" y="3">{short}</text>
               <title>{n.data.text}</title>
             </g>
           );

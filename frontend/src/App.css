@@ -74,7 +74,7 @@ button { font: inherit; }
 .node.claim .claim-ring.supports { stroke: var(--cyan); }
 .node.claim .claim-ring.challenges { stroke: var(--coral); }
 .node.claim .claim-ring.neutral { stroke: var(--muted); stroke-dasharray: 3 3; opacity: .5; }
-.node.claim .claim-label { font-size: 9px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; fill: var(--muted); }
+.node.claim .claim-label { font-size: 8px; font-weight: 700; letter-spacing: .03em; fill: var(--text); }
 .node.claim:hover .claim-core { stroke: var(--violet); }
 
 .node.paper { cursor: pointer; transition: opacity .25s ease; }
