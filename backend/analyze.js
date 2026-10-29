@@ -31,7 +31,7 @@ Respond with ONLY a single JSON object (no markdown fences, no prose) matching t
   "uncertainty": [
     { "area": "Mechanism"|"Biological context"|"Clinical efficacy"|"Safety", "status": "known"|"mixed"|"unknown",
       "note": string (<=140 chars) }
-  ],
+  ] (exactly one entry per area — no repeats),
   "verdict": {
     "label": "challenged"|"not_challenged"|"insufficient",
     "strongestChallenge": string,

@@ -1,18 +1,14 @@
-import { motion } from 'framer-motion';
+import { useEffect, useMemo, useRef } from 'react';
+import { forceSimulation, forceManyBody, forceLink, forceCollide, forceX, forceY } from 'd3-force';
+import { drag } from 'd3-drag';
+import { select } from 'd3-selection';
 
 const W = 640, H = 480, cx = W / 2, cy = H / 2;
 const studyLabel = { rct: 'RCT', cohort: 'Cohort', cell: 'Cell', animal: 'Animal', review: 'Review' };
+const claimGlyph = { mechanism: '⚙', outcome: '◎', counterargument: '⚡' };
+const titleOf = (t, n = 26) => (t && t.length > n ? `${t.slice(0, n - 1).trim()}…` : t);
 
-function ring(items, r, offset = 0) {
-  return Object.fromEntries(items.map((it, i) => {
-    const a = (2 * Math.PI * i) / items.length + offset;
-    return [it.id, { x: cx + r * Math.cos(a), y: cy + r * Math.sin(a), angle: a }];
-  }));
-}
-
-// Quadratic curve bowed slightly away from the hub, so edges fan out
-// legibly instead of overlapping as straight radial lines.
-function curve(x1, y1, x2, y2, bow = 24) {
+function curve(x1, y1, x2, y2, bow) {
   const mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
   const dx = x2 - x1, dy = y2 - y1;
   const len = Math.hypot(dx, dy) || 1;
@@ -20,22 +16,140 @@ function curve(x1, y1, x2, y2, bow = 24) {
   return `M ${x1} ${y1} Q ${mx + nx * bow} ${my + ny * bow} ${x2} ${y2}`;
 }
 
-const fade = { hidden: { opacity: 0, scale: 0.85 }, show: { opacity: 1, scale: 1 } };
+function buildGraph(analysis) {
+  const { papers, claims, input } = analysis;
+  const linkedPaperIds = new Set(claims.flatMap((c) => c.links.map((l) => l.paperId)));
+
+  const nodes = [
+    { id: 'drug', kind: 'hub', r: 34, label: titleOf(input.drug, 16), fx: cx - 90, fy: cy, x: cx - 90, y: cy },
+    { id: 'disease', kind: 'hub', r: 34, label: titleOf(input.disease, 16), fx: cx + 90, fy: cy, x: cx + 90, y: cy },
+    ...claims.map((c) => ({ id: c.id, kind: 'claim', r: 16, data: c, x: cx + (Math.random() - 0.5) * 40, y: cy + (Math.random() - 0.5) * 40 })),
+    ...papers.map((p) => ({ id: p.id, kind: 'paper', r: 18, data: p, x: cx + (Math.random() - 0.5) * 60, y: cy + (Math.random() - 0.5) * 60 })),
+  ];
+
+  const links = [
+    { source: 'drug', target: 'disease', kind: 'core hub-link' },
+    ...claims.map((c) => ({ source: 'drug', target: c.id, kind: 'core' })),
+    ...claims.flatMap((c) => c.links.map((l) => ({ source: c.id, target: l.paperId, kind: l.relation }))),
+    ...papers.filter((p) => !linkedPaperIds.has(p.id)).map((p) => ({ source: 'disease', target: p.id, kind: `${p.stance} dashed` })),
+  ];
+
+  return { nodes, links };
+}
 
 export default function KnowledgeGraph({ analysis, selectedId, onSelect }) {
-  const { papers, claims, input } = analysis;
-  const claimPos = ring(claims, 110, -Math.PI / 2);
-  const paperPos = ring(papers, 205, -Math.PI / 2 + 0.25);
-  const hubGap = 52;
-  const drugPos = { x: cx - hubGap, y: cy }, diseasePos = { x: cx + hubGap, y: cy };
-  const titleOf = (t, n = 26) => (t.length > n ? `${t.slice(0, n - 1).trim()}…` : t);
+  const svgRef = useRef(null);
+  const simRef = useRef(null);
+  const nodesRef = useRef([]);
+  const linksRef = useRef([]);
+  // Rebuilt only when `analysis` itself changes (new identity each run());
+  // this is first-paint layout data only — see note near the JSX below.
+  const graph = useMemo(() => buildGraph(analysis), [analysis]);
 
-  const linkedPaperIds = new Set(claims.flatMap((c) => c.links.map((l) => l.paperId)));
-  const orphanPapers = papers.filter((p) => !linkedPaperIds.has(p.id));
+  // Runs the simulation and wires dragging. Position updates bypass React —
+  // the tick handler writes transforms/paths directly to the DOM for
+  // performance, since this fires dozens of times per second while settling.
+  useEffect(() => {
+    const svg = svgRef.current;
+    if (!svg) return;
+
+    const nodes = graph.nodes.map((n) => ({ ...n }));
+    const links = graph.links.map((l) => ({ ...l }));
+    nodesRef.current = nodes;
+    linksRef.current = links;
+    const byId = Object.fromEntries(nodes.map((n) => [n.id, n]));
+
+    const sim = forceSimulation(nodes)
+      .force('charge', forceManyBody().strength((n) => (n.kind === 'hub' ? -420 : n.kind === 'claim' ? -220 : -170)))
+      .force('link', forceLink(links).id((n) => n.id).distance((l) => (l.kind.startsWith('core') ? 110 : 85)).strength(0.9))
+      .force('collide', forceCollide().radius((n) => n.r + 10).strength(0.9))
+      .force('x', forceX(cx).strength(0.03))
+      .force('y', forceY(cy).strength(0.04))
+      .alpha(1)
+      .alphaDecay(0.035)
+      .on('tick', () => {
+        for (const n of nodes) {
+          n.x = Math.max(n.r, Math.min(W - n.r, n.x));
+          n.y = Math.max(n.r, Math.min(H - n.r, n.y));
+          const el = svg.querySelector(`[data-node="${n.id}"]`);
+          if (el) el.setAttribute('transform', `translate(${n.x},${n.y})`);
+        }
+        const halo1 = svg.querySelector('[data-halo="drug"]');
+        const halo2 = svg.querySelector('[data-halo="disease"]');
+        if (halo1) { halo1.setAttribute('cx', byId.drug.x); halo1.setAttribute('cy', byId.drug.y); }
+        if (halo2) { halo2.setAttribute('cx', byId.disease.x); halo2.setAttribute('cy', byId.disease.y); }
+        links.forEach((l, i) => {
+          const s = byId[l.source.id || l.source], t = byId[l.target.id || l.target];
+          if (!s || !t) return;
+          const bow = l.kind.startsWith('core') ? 0 : 30;
+          const el = svg.querySelector(`[data-link="${i}"]`);
+          if (el) el.setAttribute('d', curve(s.x, s.y, t.x, t.y, bow));
+        });
+      });
+
+    simRef.current = sim;
+
+    const dragBehavior = drag()
+      .on('start', (event, d) => {
+        if (!event.active) sim.alphaTarget(0.3).restart();
+        d.fx = d.x; d.fy = d.y;
+      })
+      .on('drag', (event, d) => { d.fx = event.x; d.fy = event.y; })
+      .on('end', (event, d) => {
+        if (!event.active) sim.alphaTarget(0);
+        if (d.kind !== 'hub') { d.fx = null; d.fy = null; }
+      });
+
+    // Bind drag directly per-node (each already has a unique DOM element via
+    // data-node) rather than d3's selectAll().data() join, which assumes a
+    // general-update-pattern DOM that React doesn't hand it reliably.
+    for (const n of nodes) {
+      const el = svg.querySelector(`[data-node="${n.id}"]`);
+      if (el) select(el).datum(n).call(dragBehavior);
+    }
+
+    return () => sim.stop();
+  }, [graph]);
+
+  // Selection changes only toggle classes/opacity directly on the DOM —
+  // never through React re-render — so node positions set by the live
+  // simulation (or a drag) are never clobbered by a stale render.
+  useEffect(() => {
+    const svg = svgRef.current;
+    if (!svg) return;
+    for (const n of nodesRef.current) {
+      if (n.kind !== 'paper') continue;
+      const el = svg.querySelector(`[data-node="${n.id}"]`);
+      if (!el) continue;
+      const sel = selectedId === n.id;
+      const dimmed = Boolean(selectedId) && !sel;
+      el.classList.toggle('sel', sel);
+      el.classList.toggle('dim', dimmed);
+      el.setAttribute('aria-pressed', String(sel));
+    }
+    for (const l of linksRef.current) {
+      const paperId = l.target.id || l.target;
+      const sourceId = l.source.id || l.source;
+      const dimmed = Boolean(selectedId) && !l.kind.startsWith('core') && selectedId !== paperId && selectedId !== sourceId;
+      const idx = linksRef.current.indexOf(l);
+      const el = svg.querySelector(`[data-link="${idx}"]`);
+      if (el) el.classList.toggle('dim', dimmed);
+    }
+  }, [selectedId, graph]);
+
+  // Below, `transform`/`className` on nodes and `d` on links only matter for
+  // first paint (pre-simulation layout); live position, drag, and selection
+  // state afterward are owned entirely by the imperative effects above, which
+  // write straight to the DOM via data-node/data-link so a React re-render
+  // triggered by something else never snaps the graph back to stale state.
+  const { nodes, links } = graph;
+  const hubs = nodes.filter((n) => n.kind === 'hub');
+  const claims = nodes.filter((n) => n.kind === 'claim');
+  const papers = nodes.filter((n) => n.kind === 'paper');
 
   return (
     <div className="panel graph">
-      <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Evidence knowledge graph">
+      <svg ref={svgRef} viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Evidence knowledge graph">
         <defs>
           <radialGradient id="hubGlow" cx="50%" cy="50%" r="50%">
             <stop offset="0%" stopColor="var(--violet)" stopOpacity="0.35" />
@@ -43,97 +157,56 @@ export default function KnowledgeGraph({ analysis, selectedId, onSelect }) {
           </radialGradient>
         </defs>
 
-        <circle className="halo" cx={drugPos.x} cy={drugPos.y} r="64" fill="url(#hubGlow)" />
-        <circle className="halo" cx={diseasePos.x} cy={diseasePos.y} r="64" fill="url(#hubGlow)" />
-
-        {claims.map((c) => (
-          <motion.path
-            key={c.id}
-            className="edge core"
-            d={curve(cx, cy, claimPos[c.id].x, claimPos[c.id].y, 0)}
-            initial={{ pathLength: 0, opacity: 0 }}
-            animate={{ pathLength: 1, opacity: 1 }}
-            transition={{ duration: 0.5 }}
-          />
+        {hubs.map((n) => (
+          <circle key={`halo-${n.id}`} data-halo={n.id} className="halo" cx={n.x} cy={n.y} r="64" fill="url(#hubGlow)" />
         ))}
-        {claims.flatMap((c) => c.links.map((l) => {
-          const dimmed = selectedId && selectedId !== l.paperId;
-          return (
-            <motion.path
-              key={c.id + l.paperId}
-              className={`edge ${l.relation} ${dimmed ? 'dim' : ''}`}
-              d={curve(claimPos[c.id].x, claimPos[c.id].y, paperPos[l.paperId].x, paperPos[l.paperId].y, 36)}
-              initial={{ pathLength: 0, opacity: 0 }}
-              animate={{ pathLength: 1, opacity: dimmed ? 0.15 : 1 }}
-              transition={{ duration: 0.6, delay: 0.1 }}
-            />
-          );
-        }))}
-        {orphanPapers.map((p) => {
-          const dimmed = selectedId && selectedId !== p.id;
-          return (
-            <motion.path
-              key={`orphan-${p.id}`}
-              className={`edge ${p.stance} dashed ${dimmed ? 'dim' : ''}`}
-              d={curve(cx, cy, paperPos[p.id].x, paperPos[p.id].y, 36)}
-              initial={{ pathLength: 0, opacity: 0 }}
-              animate={{ pathLength: 1, opacity: dimmed ? 0.15 : 0.5 }}
-              transition={{ duration: 0.6, delay: 0.1 }}
-            />
-          );
+
+        {links.map((l, i) => {
+          const paperId = l.target.id || l.target;
+          const sourceId = l.source.id || l.source;
+          const dimmed = selectedId && !l.kind.startsWith('core') && selectedId !== paperId && selectedId !== sourceId;
+          return <path key={i} data-link={i} className={`edge ${l.kind} ${dimmed ? 'dim' : ''}`} d="" />;
         })}
 
-        <g className="node hub">
-          <circle cx={drugPos.x} cy={drugPos.y} r="34" />
-          <text x={drugPos.x} y={drugPos.y - 2}>{titleOf(input.drug, 16)}</text>
-          <text className="hub-tag" x={drugPos.x} y={drugPos.y + 14}>DRUG</text>
-          <circle cx={diseasePos.x} cy={diseasePos.y} r="34" />
-          <text x={diseasePos.x} y={diseasePos.y - 2}>{titleOf(input.disease, 16)}</text>
-          <text className="hub-tag" x={diseasePos.x} y={diseasePos.y + 14}>DISEASE</text>
-        </g>
-
-        {claims.map((c, i) => (
-          <motion.g
-            key={c.id}
-            className={`node claim ${c.kind}`}
-            variants={fade}
-            initial="hidden"
-            animate="show"
-            transition={{ duration: 0.35, delay: 0.25 + i * 0.05 }}
-          >
-            <circle cx={claimPos[c.id].x} cy={claimPos[c.id].y} r="15" />
-            <text className="claim-kind" x={claimPos[c.id].x} y={claimPos[c.id].y + 4}>
-              {c.kind === 'mechanism' ? '⚙' : c.kind === 'outcome' ? '◎' : '⚡'}
-            </text>
-            <title>{c.text}</title>
-          </motion.g>
+        {hubs.map((n) => (
+          <g key={n.id} data-node={n.id} data-draggable className="node hub" transform={`translate(${n.x},${n.y})`}>
+            <circle r={n.r} />
+            <text y="-2">{n.label}</text>
+            <text className="hub-tag" y="14">{n.id === 'drug' ? 'DRUG' : 'DISEASE'}</text>
+          </g>
         ))}
 
-        {papers.map((p, i) => {
+        {claims.map((n) => (
+          <g key={n.id} data-node={n.id} data-draggable className={`node claim ${n.data.kind}`} transform={`translate(${n.x},${n.y})`}>
+            <circle r={n.r} />
+            <text className="claim-kind" y="4">{claimGlyph[n.data.kind] || '•'}</text>
+            <title>{n.data.text}</title>
+          </g>
+        ))}
+
+        {papers.map((n) => {
+          const p = n.data;
           const sel = selectedId === p.id;
           const dimmed = selectedId && !sel;
           return (
-            <motion.g
-              key={p.id}
+            <g
+              key={n.id}
+              data-node={n.id}
+              data-draggable
               className={`node paper ${p.stance} ${sel ? 'sel' : ''} ${dimmed ? 'dim' : ''}`}
+              transform={`translate(${n.x},${n.y})`}
               tabIndex="0"
               role="button"
               aria-label={p.title}
               aria-pressed={sel}
               onClick={() => onSelect(sel ? null : p.id)}
               onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && onSelect(sel ? null : p.id)}
-              variants={fade}
-              initial="hidden"
-              animate="show"
-              transition={{ duration: 0.35, delay: 0.4 + i * 0.04 }}
-              whileHover={{ scale: 1.12 }}
-              whileTap={{ scale: 0.97 }}
             >
-              <circle cx={paperPos[p.id].x} cy={paperPos[p.id].y} r={sel ? 21 : 18} />
-              <text className="paper-type" x={paperPos[p.id].x} y={paperPos[p.id].y - 1}>{studyLabel[p.studyType] || p.studyType}</text>
-              <text className="paper-year" x={paperPos[p.id].x} y={paperPos[p.id].y + 11}>{p.year}</text>
+              <circle r={n.r} />
+              <text className="paper-type" y="-1">{studyLabel[p.studyType] || p.studyType}</text>
+              <text className="paper-year" y="11">{p.year}</text>
               <title>{p.title}</title>
-            </motion.g>
+            </g>
           );
         })}
       </svg>
@@ -143,9 +216,10 @@ export default function KnowledgeGraph({ analysis, selectedId, onSelect }) {
         <li><i className="challenges" /> Challenges</li>
         <li><i className="neutral" /> Neutral</li>
         <li><i className="claim-key" /> Claim</li>
+        <li className="legend-hint">Drag nodes to rearrange</li>
       </ul>
       <ul className="claim-list">
-        {claims.map((c) => <li key={c.id}><b>{c.kind}</b> {c.text}</li>)}
+        {claims.map((n) => <li key={n.id}><b>{n.data.kind}</b> {n.data.text}</li>)}
       </ul>
     </div>
   );
