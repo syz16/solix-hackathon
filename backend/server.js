@@ -3,6 +3,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const Anthropic = require('@anthropic-ai/sdk').default;
+const { runAnalysis } = require('./analyze');
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -58,6 +59,33 @@ app.post('/api/chat', async (req, res) => {
     console.error('Claude API request failed:', error.message);
     res.status(500).json({
       error: "Sorry, I couldn't get a response. Please try again.",
+    });
+  }
+});
+
+app.post('/api/analyze', async (req, res) => {
+  try {
+    const { drug, disease, mechanism } = req.body || {};
+
+    if (
+      typeof drug !== 'string' || !drug.trim() || drug.length > 200 ||
+      typeof disease !== 'string' || !disease.trim() || disease.length > 200 ||
+      (mechanism !== undefined && (typeof mechanism !== 'string' || mechanism.length > 500))
+    ) {
+      return res.status(400).json({ error: 'Invalid input.' });
+    }
+
+    const analysis = await runAnalysis(anthropic, {
+      drug: drug.trim(),
+      disease: disease.trim(),
+      mechanism: (mechanism || '').trim(),
+    });
+
+    res.json(analysis);
+  } catch (error) {
+    console.error('Analysis failed:', error.message);
+    res.status(500).json({
+      error: "Sorry, the analysis failed. Please try again.",
     });
   }
 });

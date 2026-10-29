@@ -27,8 +27,8 @@ export default function App() {
       const result = await analyze(input, (key) => setDone((d) => [...d, key]));
       setAnalysis(result);
       setTimeout(() => setStep(2), 700);
-    } catch {
-      setError('Analysis failed. Please try again.'); setStep(0);
+    } catch (err) {
+      setError(err.message || 'Analysis failed. Please try again.'); setStep(0);
     }
   }
 
@@ -45,7 +45,7 @@ export default function App() {
             </button>
           ))}
         </nav>
-        {sampleAnalysis.isSample && <span className="tag amber">Sample data</span>}
+        {analysis?.isSample && <span className="tag amber">Sample data</span>}
       </header>
 
       <main>
