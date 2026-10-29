@@ -208,24 +208,95 @@ function sanitize(result, papers) {
 }
 
 // The model occasionally emits malformed JSON (e.g. an unescaped quote); one retry usually clears it.
-async function withRetry(fn) {
+async function withRetry(fn, attempts = 3) {
+  for (let i = 1; ; i++) {
+    try {
+      return await fn();
+    } catch (error) {
+      if (i >= attempts) throw error;
+      console.warn(`Analysis attempt ${i} failed, retrying:`, error.message);
+    }
+  }
+}
+
+const REFINE_PROMPT = `You review literature-search results for a drug-repurposing hypothesis and fix bad searches. \
+You get a drug, a disease, and the titles of papers a first search returned from Europe PMC. Decide whether the set is on target: \
+papers must study THIS drug (not a related drug, class member, or combination where the drug is incidental) in THIS disease, \
+and the set should include primary clinical evidence (trials, cohorts) if any exists.
+
+Respond with ONLY a JSON object:
+{
+  "onTarget": boolean,
+  "problems": string (<=200 chars; empty if onTarget),
+  "offTargetIds": [string] (ids of papers that are not about this drug in this disease),
+  "queries": [ { "query": string, "purpose": string } ] (0-2 replacement searches; empty if onTarget)
+}
+
+Query syntax (Europe PMC): TITLE_ABS:"term", PUB_TYPE:"Randomized Controlled Trial", PUB_TYPE:"Clinical Trial", PUB_TYPE:"Meta-Analysis", AND, OR, parentheses, \
+and a trailing "sort_cited:y" to rank landmark papers first. Every query must require the drug (include synonyms, brand and older names with OR) \
+and the disease (include synonyms with OR). Prefer queries that target primary trials of this exact drug. Do not invent study results. Keep every string short; no commentary outside the JSON.`;
+
+async function refineRetrieval(anthropic, input, papers) {
   try {
-    return await fn();
+    const list = papers.map((p) => `id=${p.id} year=${p.year ?? '?'} type=${p.hintedStudyType ?? '?'} title: ${p.title}`).join('\n');
+    const message = await anthropic.messages.create({
+      model: 'claude-haiku-5-5',
+      max_tokens: 3072,
+      system: REFINE_PROMPT,
+      messages: [{ role: 'user', content: `Drug: ${input.drug}\nDisease: ${input.disease}\n\nFirst-pass results:\n${list}` }],
+    });
+    const text = message.content.filter((b) => b.type === 'text').map((b) => b.text).join('\n');
+    const review = extractJson(text);
+    if (review.onTarget && !(review.offTargetIds || []).length) return { onTarget: true, buckets: [], excluded: new Set(), queries: [] };
+
+    const queries = (review.queries || []).filter((q) => typeof q.query === 'string' && q.query.trim()).slice(0, 2);
+    const settled = await Promise.allSettled(queries.map((q) => searchEuropePMC(q.query, 8)));
+    const buckets = queries.map((q, i) => ({
+      key: 'refined',
+      query: q.query,
+      purpose: q.purpose,
+      papers: settled[i].status === 'fulfilled' ? settled[i].value.map((p) => ({ ...p, retrievedBy: 'refined' })) : [],
+      error: settled[i].status === 'rejected' ? settled[i].reason.message : undefined,
+    }));
+    const valid = new Set(papers.map((p) => p.id));
+    return {
+      onTarget: false,
+      problems: String(review.problems || ''),
+      buckets,
+      excluded: new Set((review.offTargetIds || []).filter((id) => valid.has(id))),
+      queries,
+    };
   } catch (error) {
-    console.warn('Analysis attempt failed, retrying:', error.message);
-    return fn();
+    console.warn('Query refinement skipped:', error.message);
+    return null; // refinement is best-effort; fall back to the first-pass results
   }
 }
 
 async function runAnalysis(anthropic, input, onStage = () => {}) {
   onStage('search');
-  const buckets = await retrieve(input);
-  const foundCount = buckets.reduce((n, b) => n + b.papers.length, 0);
+  let buckets = await retrieve(input);
 
   onStage('dedupe');
-  const papers = selectBalanced(buckets, MAX_PAPERS);
+  let papers = selectBalanced(buckets, MAX_PAPERS);
+
+  // Let the model audit the first pass: drop off-target papers and, if needed, search again with better queries.
+  const refinement = papers.length ? await refineRetrieval(anthropic, input, papers) : null;
+  if (refinement && !refinement.onTarget) {
+    buckets = [...refinement.buckets, ...buckets].map((b) => ({
+      ...b,
+      papers: b.papers.filter((p) => !refinement.excluded.has(p.id)),
+    }));
+    papers = selectBalanced(buckets, MAX_PAPERS);
+  }
+  const foundCount = buckets.reduce((n, b) => n + b.papers.length, 0);
   const meta = {
     queries: buckets.map((b) => ({ key: b.key, query: b.query, count: b.papers.length, error: b.error })),
+    refinement: refinement && {
+      onTarget: refinement.onTarget,
+      problems: refinement.problems,
+      excludedIds: [...refinement.excluded],
+      queries: refinement.queries,
+    },
   };
 
   if (papers.length === 0) {
