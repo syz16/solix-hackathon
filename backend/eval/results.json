@@ -1,0 +1,298 @@
+{
+  "summary": {
+    "verdictAccuracy": "13/14",
+    "tunedCases": "9/10",
+    "heldOutCases": "4/4",
+    "quotesVerified": "99/104",
+    "hallucinatedIdsCaught": 0,
+    "testsGrounded": "13/13"
+  },
+  "results": [
+    {
+      "drug": "Hydroxychloroquine",
+      "disease": "COVID-19",
+      "mechanism": "Inhibition of viral entry via endosomal pH",
+      "expected": [
+        "challenged"
+      ],
+      "why": "RECOVERY and other large RCTs found no mortality benefit",
+      "actual": "challenged",
+      "match": true,
+      "papers": 8,
+      "supports": 1,
+      "challenges": 5,
+      "strongDesign": 6,
+      "quotesVerified": 8,
+      "droppedIds": 0,
+      "testGrounded": true,
+      "question": "Does HCQ reduce SARS-CoV-2 entry in human airway cells at concentrations achievable in patients, and does any reduction translate to viral-load benefit in early outpatients?",
+      "seconds": 29
+    },
+    {
+      "drug": "Ivermectin",
+      "disease": "COVID-19",
+      "mechanism": "Inhibition of viral replication",
+      "expected": [
+        "challenged"
+      ],
+      "why": "TOGETHER and ACTIV-6 RCTs found no benefit",
+      "actual": "insufficient",
+      "match": false,
+      "papers": 8,
+      "supports": 2,
+      "challenges": 1,
+      "strongDesign": 5,
+      "quotesVerified": 8,
+      "droppedIds": 0,
+      "testGrounded": true,
+      "question": "Does oral ivermectin reduce infectious SARS-CoV-2 in respiratory samples at drug concentrations that exceed the in-vitro effective concentration?",
+      "seconds": 34
+    },
+    {
+      "drug": "Vitamin E",
+      "disease": "Prostate cancer",
+      "mechanism": "Antioxidant protection against oxidative DNA damage",
+      "expected": [
+        "challenged"
+      ],
+      "why": "SELECT trial found no prevention benefit (increased risk)",
+      "actual": "challenged",
+      "match": true,
+      "papers": 8,
+      "supports": 1,
+      "challenges": 2,
+      "strongDesign": 5,
+      "quotesVerified": 8,
+      "droppedIds": 0,
+      "testGrounded": true,
+      "question": "Does vitamin E reduce oxidative DNA damage biomarkers in prostate tissue or urine, and does any change depend on smoking status?",
+      "seconds": 32
+    },
+    {
+      "drug": "Beta-carotene",
+      "disease": "Lung cancer",
+      "mechanism": "Antioxidant chemoprevention",
+      "expected": [
+        "challenged"
+      ],
+      "why": "ATBC and CARET trials found increased incidence in smokers",
+      "actual": "challenged",
+      "match": true,
+      "papers": 8,
+      "supports": 0,
+      "challenges": 6,
+      "strongDesign": 7,
+      "quotesVerified": 8,
+      "droppedIds": 0,
+      "testGrounded": true,
+      "question": "Does beta-carotene supplementation reduce oxidative DNA damage in bronchial epithelium of smokers, and does any such reduction track with the increased lung cancer risk seen in trials?",
+      "seconds": 26
+    },
+    {
+      "drug": "Estrogen",
+      "disease": "Coronary heart disease",
+      "mechanism": "Improved lipid profile and vascular protection",
+      "expected": [
+        "challenged"
+      ],
+      "why": "WHI and HERS trials found no cardioprotection",
+      "actual": "challenged",
+      "match": true,
+      "papers": 8,
+      "supports": 2,
+      "challenges": 4,
+      "strongDesign": 4,
+      "quotesVerified": 8,
+      "droppedIds": 0,
+      "testGrounded": true,
+      "question": "Does estrogen reduce CHD events and improve lipid and vascular markers when started early after menopause, compared with when started later?",
+      "seconds": 31
+    },
+    {
+      "drug": "Sildenafil",
+      "disease": "Pulmonary arterial hypertension",
+      "mechanism": "PDE5 inhibition causing pulmonary vasodilation",
+      "expected": [
+        "not_challenged"
+      ],
+      "why": "Approved after positive RCTs (SUPER-1)",
+      "actual": "not_challenged",
+      "match": true,
+      "papers": 8,
+      "supports": 4,
+      "challenges": 1,
+      "strongDesign": 8,
+      "quotesVerified": 7,
+      "droppedIds": 0,
+      "testGrounded": true,
+      "question": "Does sildenafil's clinical benefit in PAH track with pulmonary vasodilation (PVR) or with RV contractility change?",
+      "seconds": 29
+    },
+    {
+      "drug": "Thalidomide",
+      "disease": "Multiple myeloma",
+      "mechanism": "Immunomodulatory and anti-angiogenic activity",
+      "expected": [
+        "not_challenged"
+      ],
+      "why": "Approved; survival benefit in RCTs",
+      "actual": "not_challenged",
+      "match": true,
+      "papers": 8,
+      "supports": 5,
+      "challenges": 1,
+      "strongDesign": 5,
+      "quotesVerified": 8,
+      "droppedIds": 0,
+      "testGrounded": true,
+      "question": "Does thalidomide's clinical response in patients track with CRBN-dependent IKZF1/3 degradation and with a reduction in marrow microvessel density?",
+      "seconds": 32
+    },
+    {
+      "drug": "Propranolol",
+      "disease": "Infantile hemangioma",
+      "mechanism": "Beta-adrenergic blockade causing vasoconstriction",
+      "expected": [
+        "not_challenged"
+      ],
+      "why": "First-line therapy after a positive RCT",
+      "actual": "not_challenged",
+      "match": true,
+      "papers": 8,
+      "supports": 5,
+      "challenges": 0,
+      "strongDesign": 4,
+      "quotesVerified": 7,
+      "droppedIds": 0,
+      "testGrounded": true,
+      "question": "Does propranolol reduce hemangioma perfusion or vascular tone before any clinical regression, as the vasoconstriction mechanism predicts?",
+      "seconds": 32
+    },
+    {
+      "drug": "Metformin",
+      "disease": "Glioblastoma",
+      "mechanism": "Altered cellular metabolism",
+      "expected": [
+        "insufficient",
+        "challenged"
+      ],
+      "why": "Preclinical signal, no conclusive clinical evidence",
+      "actual": "insufficient",
+      "match": true,
+      "papers": 8,
+      "supports": 2,
+      "challenges": 2,
+      "strongDesign": 3,
+      "quotesVerified": 8,
+      "droppedIds": 0,
+      "testGrounded": true,
+      "question": "Does metformin's survival benefit with TMZ in orthotopic GBM depend on its metabolic action, rather than CLIC1 or immune effects?",
+      "seconds": 31
+    },
+    {
+      "drug": "Zorvaquintide",
+      "disease": "Glioblastoma",
+      "mechanism": "Kinase inhibition",
+      "expected": [
+        "insufficient"
+      ],
+      "why": "Made-up drug; checks the tool does not invent evidence",
+      "actual": "insufficient",
+      "match": true,
+      "papers": 0,
+      "supports": 0,
+      "challenges": 0,
+      "strongDesign": 0,
+      "quotesVerified": 0,
+      "droppedIds": 0,
+      "testGrounded": false,
+      "question": "Does any preclinical evidence support this drug-disease link?",
+      "seconds": 1
+    },
+    {
+      "drug": "Vitamin D",
+      "disease": "Cardiovascular disease",
+      "mechanism": "Improved vascular function and reduced inflammation",
+      "expected": [
+        "challenged"
+      ],
+      "why": "VITAL and other large RCTs found no reduction in cardiovascular events",
+      "heldOut": true,
+      "actual": "challenged",
+      "match": true,
+      "papers": 8,
+      "supports": 2,
+      "challenges": 3,
+      "strongDesign": 4,
+      "quotesVerified": 7,
+      "droppedIds": 0,
+      "testGrounded": true,
+      "question": "Does vitamin D supplementation improve endothelial function and glycocalyx markers in people with baseline 25-OH D deficiency, and does any improvement track with inflammatory markers?",
+      "seconds": 59
+    },
+    {
+      "drug": "Celecoxib",
+      "disease": "Alzheimer's disease",
+      "mechanism": "COX-2 inhibition reducing neuroinflammation",
+      "expected": [
+        "challenged"
+      ],
+      "why": "ADAPT and other trials found no prevention benefit",
+      "heldOut": true,
+      "actual": "challenged",
+      "match": true,
+      "papers": 8,
+      "supports": 1,
+      "challenges": 4,
+      "strongDesign": 5,
+      "quotesVerified": 8,
+      "droppedIds": 0,
+      "testGrounded": true,
+      "question": "Does celecoxib lower brain COX-2 pathway activity and neuroinflammation in people with early AD, and does any such change track cognition?",
+      "seconds": 31
+    },
+    {
+      "drug": "Imatinib",
+      "disease": "Chronic myeloid leukemia",
+      "mechanism": "BCR-ABL tyrosine kinase inhibition",
+      "expected": [
+        "not_challenged"
+      ],
+      "why": "Standard of care after the IRIS trial",
+      "heldOut": true,
+      "actual": "not_challenged",
+      "match": true,
+      "papers": 8,
+      "supports": 5,
+      "challenges": 0,
+      "strongDesign": 6,
+      "quotesVerified": 7,
+      "droppedIds": 0,
+      "testGrounded": true,
+      "question": "Does the depth of in-patient BCR-ABL kinase inhibition, measured directly, track with molecular response to imatinib?",
+      "seconds": 29
+    },
+    {
+      "drug": "Rituximab",
+      "disease": "Rheumatoid arthritis",
+      "mechanism": "B-cell depletion",
+      "expected": [
+        "not_challenged"
+      ],
+      "why": "Approved after positive RCTs (REFLEX)",
+      "heldOut": true,
+      "actual": "not_challenged",
+      "match": true,
+      "papers": 8,
+      "supports": 4,
+      "challenges": 1,
+      "strongDesign": 4,
+      "quotesVerified": 7,
+      "droppedIds": 0,
+      "testGrounded": true,
+      "question": "Does the depth of peripheral and synovial B-cell depletion predict ACR20 response to rituximab in RA?",
+      "seconds": 32
+    }
+  ],
+  "ranAt": "2026-10-29T01:31:53.798Z"
+}

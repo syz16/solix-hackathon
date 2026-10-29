@@ -4,6 +4,7 @@ const express = require('express');
 const cors = require('cors');
 const Anthropic = require('@anthropic-ai/sdk').default;
 const { runAnalysis } = require('./analyze');
+const { readCache, writeCache } = require('./cache');
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -64,6 +65,7 @@ app.post('/api/chat', async (req, res) => {
 });
 
 app.post('/api/analyze', async (req, res) => {
+  let input;
   try {
     const { drug, disease, mechanism } = req.body || {};
 
@@ -75,15 +77,18 @@ app.post('/api/analyze', async (req, res) => {
       return res.status(400).json({ error: 'Invalid input.' });
     }
 
-    const analysis = await runAnalysis(anthropic, {
-      drug: drug.trim(),
-      disease: disease.trim(),
-      mechanism: (mechanism || '').trim(),
-    });
+    input = { drug: drug.trim(), disease: disease.trim(), mechanism: (mechanism || '').trim() };
 
+    const cached = process.env.DEMO_OFFLINE === '1' && readCache(input);
+    if (cached) return res.json({ ...cached, cached: true });
+
+    const analysis = await runAnalysis(anthropic, input);
+    writeCache(input, analysis);
     res.json(analysis);
   } catch (error) {
     console.error('Analysis failed:', error.message);
+    const cached = input && readCache(input);
+    if (cached) return res.json({ ...cached, cached: true });
     res.status(500).json({
       error: "Sorry, the analysis failed. Please try again.",
     });

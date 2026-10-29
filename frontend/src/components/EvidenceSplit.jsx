@@ -6,7 +6,16 @@ function Column({ title, cls, papers }) {
     <div className={`col ${cls}`}>
       <h4>{title} <span>{papers.length}</span></h4>
       <div className="chips">{Object.entries(counts).map(([t, n]) => <span key={t} className="chip">{n} {typeLabel[t]}</span>)}</div>
-      <ul>{papers.map((p) => <li key={p.id}><b>{typeLabel[p.studyType]}, {p.year}.</b> {p.finding}</li>)}</ul>
+      <ul>{papers.map((p) => (
+        <li key={p.id}>
+          <b>{typeLabel[p.studyType]}, {p.year}.</b> {p.finding}
+          {p.quoteVerified !== undefined && (
+            <span className={`quote-check ${p.quoteVerified ? 'ok' : 'miss'}`} title={p.quote}>
+              {p.quoteVerified ? '✓ quote found in abstract' : '⚠ quote not found in abstract'}
+            </span>
+          )}
+        </li>
+      ))}</ul>
     </div>
   );
 }

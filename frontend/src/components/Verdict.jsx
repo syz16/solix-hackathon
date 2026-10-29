@@ -26,7 +26,7 @@ export default function Verdict({ analysis }) {
         </div>
         <p className="rationale"><span className="label">Why this test</span>{t.rationale}</p>
         <div className="cites"><span className="label">Linked evidence</span>
-          {t.paperIds.map((id) => { const p = papers.find((x) => x.id === id); return <a key={id} href={p.url} target="_blank" rel="noreferrer">{p.title} ↗</a>; })}
+          {t.paperIds.map((id) => papers.find((x) => x.id === id)).filter(Boolean).map((p) => <a key={p.id} href={p.url} target="_blank" rel="noreferrer">{p.title} ↗</a>)}
         </div>
       </motion.article>
     </div>
