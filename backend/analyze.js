@@ -34,7 +34,7 @@ Respond with ONLY a single JSON object (no markdown fences, no prose) matching t
   "uncertainty": [
     { "area": "Mechanism"|"Biological context"|"Clinical efficacy"|"Safety", "status": "supported"|"mixed"|"unknown",
       "note": string (<=140 chars) }
-  ],
+  ] (exactly one entry per area — no repeats),
   "verdict": {
     "label": "challenged"|"not_challenged"|"insufficient",
     "strongestChallenge": string,
@@ -51,6 +51,7 @@ Respond with ONLY a single JSON object (no markdown fences, no prose) matching t
 
 Rules:
 - Use only the "papers" you were given; include every paper you were given, classified.
+- Every paper must be referenced by at least one claim's "links" — if a paper doesn't clearly support or challenge an existing claim, add a claim for it (or fold it into the closest-fitting claim) rather than leaving it unlinked.
 - Every claim link's paperId must reference a paper in your "papers" array.
 - Every nextTest.paperIds entry must reference a paper in your "papers" array.
 - Each "quote" must be copied character-for-character from the given abstract; it is checked automatically.
@@ -203,6 +204,17 @@ function sanitize(result, papers) {
     assumptions: result.verdict.assumptions || [],
     nextTest: { ...nextTest, outcomes: nextTest.outcomes || [], paperIds: (nextTest.paperIds || []).filter(valid) },
   };
+
+  // The model is asked to link every paper to a claim but can miss one;
+  // attach any orphaned paper to its best-fitting claim (by stance) so the
+  // graph never has to render a disconnected node.
+  const linked = new Set(claims.flatMap((c) => c.links.map((l) => l.paperId)));
+  if (claims.length) {
+    for (const paper of outPapers.filter((p) => !linked.has(p.id))) {
+      const target = claims.find((c) => c.links.some((l) => l.relation === paper.stance)) || claims[0];
+      target.links.push({ paperId: paper.id, relation: paper.stance === 'challenges' ? 'challenges' : 'supports' });
+    }
+  }
 
   return { papers: outPapers, claims, uncertainty, verdict, droppedIds: dropped };
 }
