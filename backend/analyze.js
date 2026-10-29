@@ -61,6 +61,10 @@ compare the strongest-design papers on each side and let those decide the verdic
 - Decide the verdict on whether the drug has the claimed effect on the disease. A mechanism that was never directly measured is an assumption to list \
 and to design the next test around; it only lowers the verdict to "insufficient" if no strong-design study shows the effect at all, \
 and it only supports "challenged" if evidence contradicts the effect or the mechanism.
+- A well-powered randomized trial or meta-analysis that finds no benefit, no difference from control, or harm counts as "challenges", \
+not "neutral": a null result is evidence against the hypothesis. Mark "neutral" only when a paper does not test the hypothesis.
+- Supporting evidence from cell, animal, in-silico, or surrogate-endpoint studies cannot override a contradicting randomized trial or meta-analysis; \
+when they conflict, the verdict follows the clinical-outcome evidence.
 - Use "challenged" when strong-design evidence contradicts the hypothesis, "not_challenged" when at least one randomized trial or meta-analysis directly supports the hypothesis \
 and no comparable-design evidence contradicts it (weaker contradicting papers should be listed as limitations, not decide the verdict), and "insufficient" when only weak or indirect evidence exists.
 - Keep text concise and evidence-grounded; do not invent findings beyond what the abstract supports.

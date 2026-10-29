@@ -1,7 +1,7 @@
 {
   "summary": {
-    "verdictAccuracy": "7/10",
-    "quotesVerified": "71/72",
+    "verdictAccuracy": "8/10",
+    "quotesVerified": "72/72",
     "hallucinatedIdsCaught": 0,
     "testsGrounded": "9/9"
   },
@@ -14,17 +14,17 @@
         "challenged"
       ],
       "why": "RECOVERY and other large RCTs found no mortality benefit",
-      "actual": "insufficient",
-      "match": false,
+      "actual": "challenged",
+      "match": true,
       "papers": 8,
-      "supports": 1,
-      "challenges": 1,
+      "supports": 2,
+      "challenges": 3,
       "strongDesign": 6,
       "quotesVerified": 8,
       "droppedIds": 0,
       "testGrounded": true,
-      "question": "Does HCQ reduce nasopharyngeal viral load in a randomized setting, and does this track with a measurable endosomal pH shift in target airway cells?",
-      "seconds": 34
+      "question": "Does HCQ inhibit SARS-CoV-2 entry in human airway tissue at drug concentrations achieved in patients?",
+      "seconds": 27
     },
     {
       "drug": "Ivermectin",
@@ -34,17 +34,17 @@
         "challenged"
       ],
       "why": "TOGETHER and ACTIV-6 RCTs found no benefit",
-      "actual": "not_challenged",
+      "actual": "insufficient",
       "match": false,
       "papers": 8,
       "supports": 3,
       "challenges": 0,
       "strongDesign": 6,
-      "quotesVerified": 7,
+      "quotesVerified": 8,
       "droppedIds": 0,
       "testGrounded": true,
-      "question": "Does ivermectin reduce infectious SARS-CoV-2 (culture-positive titer), not just RNA load, versus placebo in symptomatic early-stage patients?",
-      "seconds": 27
+      "question": "Does early ivermectin reduce SARS-CoV-2 replication in humans versus placebo, and does that reduction predict clinical benefit?",
+      "seconds": 26
     },
     {
       "drug": "Vitamin E",
@@ -63,8 +63,8 @@
       "quotesVerified": 8,
       "droppedIds": 0,
       "testGrounded": true,
-      "question": "Does alpha-tocopherol reduce a direct biomarker of oxidative DNA damage (8-oxo-dG) in prostate tissue or urine compared with placebo, and does this depend on smoking status?",
-      "seconds": 24
+      "question": "Does alpha-tocopherol lower oxidative DNA damage in men with elevated baseline oxidative stress, and does that reduction track with prostate cancer risk markers?",
+      "seconds": 25
     },
     {
       "drug": "Beta-carotene",
@@ -78,13 +78,13 @@
       "match": true,
       "papers": 8,
       "supports": 0,
-      "challenges": 6,
+      "challenges": 7,
       "strongDesign": 6,
       "quotesVerified": 8,
       "droppedIds": 0,
       "testGrounded": true,
-      "question": "Does beta-carotene supplementation in smokers shift antioxidant/oxidative-stress markers in the direction the antioxidant mechanism predicts, and do those shifts track lung cancer risk?",
-      "seconds": 19
+      "question": "Does beta-carotene supplementation shift lung oxidative-stress biomarkers in smokers, and does that shift predict lung cancer outcome?",
+      "seconds": 20
     },
     {
       "drug": "Estrogen",
@@ -103,8 +103,8 @@
       "quotesVerified": 8,
       "droppedIds": 0,
       "testGrounded": true,
-      "question": "Does early-initiated estrogen reduce coronary atherosclerosis progression, and does any effect operate through lipid change?",
-      "seconds": 24
+      "question": "Does estrogen reduce coronary events or atherosclerotic progression when started early after menopause, and does any effect track lipid and vascular changes?",
+      "seconds": 28
     },
     {
       "drug": "Sildenafil",
@@ -117,13 +117,13 @@
       "actual": "not_challenged",
       "match": true,
       "papers": 8,
-      "supports": 3,
-      "challenges": 1,
-      "strongDesign": 4,
+      "supports": 4,
+      "challenges": 0,
+      "strongDesign": 5,
       "quotesVerified": 8,
       "droppedIds": 0,
       "testGrounded": true,
-      "question": "Does the change in pulmonary vascular resistance under sildenafil track the change in 6-minute walk distance, and is that association absent for a non-vasodilatory effect?",
+      "question": "Does the change in pulmonary vascular resistance (PVR) at 12 weeks mediate the sildenafil-induced change in 6-minute walk distance, or does the 6MWD benefit persist despite minimal PVR change?",
       "seconds": 22
     },
     {
@@ -137,14 +137,14 @@
       "actual": "insufficient",
       "match": false,
       "papers": 8,
-      "supports": 3,
-      "challenges": 2,
+      "supports": 2,
+      "challenges": 1,
       "strongDesign": 6,
       "quotesVerified": 8,
       "droppedIds": 0,
       "testGrounded": true,
-      "question": "Does thalidomide plus dexamethasone outperform dexamethasone alone in relapsed myeloma, and does any benefit track with marrow microvessel density change and CRBN expression?",
-      "seconds": 22
+      "question": "Does thalidomide's benefit in relapsed myeloma depend on anti-angiogenic action, as measured by bone marrow microvessel density changes, and on CRBN expression?",
+      "seconds": 45
     },
     {
       "drug": "Propranolol",
@@ -157,14 +157,14 @@
       "actual": "not_challenged",
       "match": true,
       "papers": 8,
-      "supports": 5,
+      "supports": 6,
       "challenges": 0,
       "strongDesign": 2,
       "quotesVerified": 8,
       "droppedIds": 0,
       "testGrounded": true,
-      "question": "Does lesional perfusion fall before and in proportion to regression, which would be expected if vasoconstriction drives the effect?",
-      "seconds": 21
+      "question": "Does propranolol reduce intralesional blood flow or raise vascular resistance in proliferating hemangioma, and does that change track regression?",
+      "seconds": 22
     },
     {
       "drug": "Metformin",
@@ -184,8 +184,8 @@
       "quotesVerified": 8,
       "droppedIds": 0,
       "testGrounded": true,
-      "question": "Is metformin's growth inhibition in GBM cells mediated by the metabolic shift, or does it persist when that shift is blocked?",
-      "seconds": 23
+      "question": "Does metformin's survival benefit with TMZ in orthotopic GBM depend on the metabolic pathway or on CLIC1?",
+      "seconds": 26
     },
     {
       "drug": "Zorvaquintide",
@@ -208,5 +208,5 @@
       "seconds": 1
     }
   ],
-  "ranAt": "2026-10-29T01:06:09.381Z"
+  "ranAt": "2026-10-29T01:13:44.232Z"
 }
