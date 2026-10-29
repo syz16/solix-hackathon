@@ -1,5 +1,7 @@
 const { searchEuropePMC } = require('./europepmc');
 
+const MAX_PAPERS = 8;
+
 const STAGES = [
   { key: 'search', label: 'Searching literature', detail: 'Query Europe PMC for the drug–disease pair' },
   { key: 'dedupe', label: 'Deduplicating results', detail: 'Merge repeated records' },
@@ -22,14 +24,15 @@ Respond with ONLY a single JSON object (no markdown fences, no prose) matching t
       "year": number, "studyType": "rct"|"cohort"|"cell"|"animal"|"review",
       "stance": "supports"|"challenges"|"neutral",
       "directness": "direct"|"indirect"|"speculative",
-      "finding": string (<=160 chars, one concrete takeaway) }
+      "finding": string (<=160 chars, one concrete takeaway),
+      "quote": string (a short verbatim span copied exactly from that paper's abstract that backs the finding, <=200 chars) }
   ],
   "claims": [
     { "id": string (e.g. "c1"), "kind": "mechanism"|"outcome"|"counterargument", "text": string,
       "links": [ { "paperId": string, "relation": "supports"|"challenges" } ] }
   ],
   "uncertainty": [
-    { "area": "Mechanism"|"Biological context"|"Clinical efficacy"|"Safety", "status": "known"|"mixed"|"unknown",
+    { "area": "Mechanism"|"Biological context"|"Clinical efficacy"|"Safety", "status": "supported"|"mixed"|"unknown",
       "note": string (<=140 chars) }
   ],
   "verdict": {
@@ -50,8 +53,69 @@ Rules:
 - Use only the "papers" you were given; include every paper you were given, classified.
 - Every claim link's paperId must reference a paper in your "papers" array.
 - Every nextTest.paperIds entry must reference a paper in your "papers" array.
+- Each "quote" must be copied character-for-character from the given abstract; it is checked automatically.
+- Weigh evidence by study design, not paper count: randomized trials > cohort/observational > animal > cell > review/speculation. \
+One well-controlled clinical study outweighs several preclinical ones. Base the verdict on the strongest-design evidence.
+- Evidence was deliberately retrieved from both sides. Do not treat a mix of supporting and contradicting papers as automatically "insufficient": \
+compare the strongest-design papers on each side and let those decide the verdict.
+- Decide the verdict on whether the drug has the claimed effect on the disease. A mechanism that was never directly measured is an assumption to list \
+and to design the next test around; it only lowers the verdict to "insufficient" if no strong-design study shows the effect at all, \
+and it only supports "challenged" if evidence contradicts the effect or the mechanism.
+- Use "challenged" when strong-design evidence contradicts the hypothesis, "not_challenged" when at least one randomized trial or meta-analysis directly supports the hypothesis \
+and no comparable-design evidence contradicts it (weaker contradicting papers should be listed as limitations, not decide the verdict), and "insufficient" when only weak or indirect evidence exists.
 - Keep text concise and evidence-grounded; do not invent findings beyond what the abstract supports.
 - If the retrieved evidence is thin or absent, say so honestly via "insufficient" and "unknown" uncertainty — do not pad.`;
+
+// Several targeted queries so the evidence set isn't left to relevance ranking:
+// a falsification tool has to go looking for contradicting and clinical evidence.
+function buildQueries(input) {
+  // Title/abstract match keeps neighbouring drugs out; sort_cited surfaces landmark trials over the newest papers.
+  const clean = (t) => t.replace(/["()]/g, ' ').trim();
+  const base = `(TITLE_ABS:"${clean(input.drug)}") AND (TITLE_ABS:"${clean(input.disease)}")`;
+  const byCitations = ' sort_cited:y';
+  const queries = [
+    { key: 'clinical', query: `${base} AND (PUB_TYPE:"Clinical Trial" OR PUB_TYPE:"Randomized Controlled Trial" OR PUB_TYPE:"Observational Study")${byCitations}` },
+    { key: 'supporting', query: `${base} AND (PUB_TYPE:"Clinical Trial" OR PUB_TYPE:"Randomized Controlled Trial" OR PUB_TYPE:"Meta-Analysis") AND (efficacy OR effective OR improved OR benefit OR "significantly reduced" OR approved)${byCitations}` },
+    { key: 'contradicting', query: `${base} AND ("no effect" OR "no benefit" OR "did not" OR ineffective OR failed OR resistance OR "no significant")${byCitations}` },
+    { key: 'base', query: base },
+  ];
+  if (input.mechanism) queries.splice(2, 0, { key: 'mechanism', query: `${base} AND (${clean(input.mechanism)})` });
+  return queries;
+}
+
+async function retrieve(input) {
+  const queries = buildQueries(input);
+  const settled = await Promise.allSettled(queries.map((q) => searchEuropePMC(q.query, 8)));
+  if (settled.every((r) => r.status === 'rejected')) throw settled[0].reason;
+  return queries.map((q, i) => ({
+    ...q,
+    papers: settled[i].status === 'fulfilled' ? settled[i].value.map((p) => ({ ...p, retrievedBy: q.key })) : [],
+    error: settled[i].status === 'rejected' ? settled[i].reason.message : undefined,
+  }));
+}
+
+// Round-robin across query buckets (in priority order) so one query can't crowd out the others.
+function selectBalanced(buckets, limit) {
+  const seen = new Set();
+  const picked = [];
+  const queues = buckets.map((b) => [...b.papers]);
+  while (picked.length < limit && queues.some((q) => q.length)) {
+    for (const q of queues) {
+      while (q.length) {
+        const p = q.shift();
+        const keys = [p.id, p.title.trim().toLowerCase()];
+        if (keys.some((k) => seen.has(k))) continue;
+        keys.forEach((k) => seen.add(k));
+        picked.push(p);
+        break;
+      }
+      if (picked.length >= limit) break;
+    }
+  }
+  return picked;
+}
+
+const normalize = (t) => String(t || '').replace(/<[^>]+>/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
 
 function buildUserPrompt(input, papers) {
   const papersBlock = papers
@@ -79,32 +143,86 @@ function extractJson(text) {
   return JSON.parse(raw.slice(start, end + 1));
 }
 
-function validateShape(result, papers) {
-  const ids = new Set(papers.map((p) => p.id));
-  if (!Array.isArray(result.papers) || result.papers.length === 0) throw new Error('Missing papers');
+const ENUMS = {
+  studyType: ['rct', 'cohort', 'cell', 'animal', 'review'],
+  stance: ['supports', 'challenges', 'neutral'],
+  directness: ['direct', 'indirect', 'speculative'],
+  status: ['supported', 'mixed', 'unknown'],
+  verdict: ['challenged', 'not_challenged', 'insufficient'],
+};
+const pick = (value, allowed, fallback) => (allowed.includes(value) ? value : fallback);
+
+// Repairs the model output against the retrieved set instead of trusting it: unknown paper ids
+// are dropped (and counted), enums are coerced, and each quote is checked against its abstract.
+function sanitize(result, papers) {
+  if (!Array.isArray(result.papers)) throw new Error('Missing papers');
   if (!Array.isArray(result.claims)) throw new Error('Missing claims');
   if (!Array.isArray(result.uncertainty)) throw new Error('Missing uncertainty');
   if (!result.verdict?.nextTest) throw new Error('Missing verdict');
-  for (const p of result.papers) {
-    if (!ids.has(p.id)) throw new Error(`Unknown paper id in output: ${p.id}`);
+
+  const byId = new Map(papers.map((p) => [p.id, p]));
+  const dropped = [];
+  const keep = (id) => (byId.has(id) ? true : (dropped.push(id), false));
+
+  const outPapers = result.papers.filter((p) => keep(p.id)).map((p) => {
+    const source = byId.get(p.id);
+    const quote = String(p.quote || '').trim();
+    return {
+      ...p,
+      title: source.title,
+      url: source.url,
+      year: source.year ?? p.year,
+      studyType: pick(p.studyType, ENUMS.studyType, source.hintedStudyType || 'review'),
+      stance: pick(p.stance, ENUMS.stance, 'neutral'),
+      directness: pick(p.directness, ENUMS.directness, 'indirect'),
+      quote,
+      quoteVerified: quote.length >= 12 && normalize(source.abstract).includes(normalize(quote)),
+      retrievedBy: source.retrievedBy,
+    };
+  });
+  if (outPapers.length === 0) throw new Error('Model returned no valid papers');
+  const validIds = new Set(outPapers.map((p) => p.id));
+  const valid = (id) => (validIds.has(id) ? true : (dropped.push(id), false));
+
+  const claims = result.claims.map((c) => ({
+    ...c,
+    links: (c.links || []).filter((l) => valid(l.paperId)).map((l) => ({ ...l, relation: pick(l.relation, ['supports', 'challenges'], 'supports') })),
+  }));
+  const uncertainty = result.uncertainty.map((u) => ({
+    ...u,
+    status: pick(u.status === 'known' ? 'supported' : u.status, ENUMS.status, 'unknown'),
+  }));
+  const { nextTest } = result.verdict;
+  const verdict = {
+    ...result.verdict,
+    label: pick(result.verdict.label, ENUMS.verdict, 'insufficient'),
+    assumptions: result.verdict.assumptions || [],
+    nextTest: { ...nextTest, outcomes: nextTest.outcomes || [], paperIds: (nextTest.paperIds || []).filter(valid) },
+  };
+
+  return { papers: outPapers, claims, uncertainty, verdict, droppedIds: dropped };
+}
+
+// The model occasionally emits malformed JSON (e.g. an unescaped quote); one retry usually clears it.
+async function withRetry(fn) {
+  try {
+    return await fn();
+  } catch (error) {
+    console.warn('Analysis attempt failed, retrying:', error.message);
+    return fn();
   }
-  return result;
 }
 
 async function runAnalysis(anthropic, input, onStage = () => {}) {
-  const query = `(${input.drug}) AND (${input.disease})`;
-
   onStage('search');
-  const found = await searchEuropePMC(query, 12);
+  const buckets = await retrieve(input);
+  const foundCount = buckets.reduce((n, b) => n + b.papers.length, 0);
 
   onStage('dedupe');
-  const seen = new Set();
-  const papers = found.filter((p) => {
-    const key = p.title.trim().toLowerCase();
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
+  const papers = selectBalanced(buckets, MAX_PAPERS);
+  const meta = {
+    queries: buckets.map((b) => ({ key: b.key, query: b.query, count: b.papers.length, error: b.error })),
+  };
 
   if (papers.length === 0) {
     const stageCounts = { search: 0, dedupe: 0, extract: 0, compare: 0, recommend: 1 };
@@ -136,30 +254,29 @@ async function runAnalysis(anthropic, input, onStage = () => {}) {
           paperIds: [],
         },
       },
+      meta,
     };
   }
 
-  const capped = papers.slice(0, 6);
-
   onStage('extract');
-  const message = await anthropic.messages.create({
-    model: 'claude-haiku-5-5',
-    max_tokens: 6144,
-    system: SYSTEM_PROMPT,
-    messages: [{ role: 'user', content: buildUserPrompt(input, capped) }],
+  const result = await withRetry(async () => {
+    const message = await anthropic.messages.create({
+      model: 'claude-haiku-5-5',
+      max_tokens: 8192,
+      system: SYSTEM_PROMPT,
+      messages: [{ role: 'user', content: buildUserPrompt(input, papers) }],
+    });
+    if (message.stop_reason === 'max_tokens') {
+      throw new Error('Model response was truncated (max_tokens reached)');
+    }
+    const text = message.content.filter((b) => b.type === 'text').map((b) => b.text).join('\n');
+    return sanitize(extractJson(text), papers);
   });
-
-  if (message.stop_reason === 'max_tokens') {
-    throw new Error('Model response was truncated (max_tokens reached)');
-  }
-
   onStage('compare');
-  const text = message.content.filter((b) => b.type === 'text').map((b) => b.text).join('\n');
-  const result = validateShape(extractJson(text), capped);
 
   onStage('recommend');
   const stageCounts = {
-    search: found.length,
+    search: foundCount,
     dedupe: papers.length,
     extract: result.papers.length,
     compare: result.papers.length,
@@ -172,6 +289,11 @@ async function runAnalysis(anthropic, input, onStage = () => {}) {
     stages: STAGES.map((s) => ({ ...s, count: stageCounts[s.key] })),
     uncertainty: result.uncertainty,
     verdict: result.verdict,
+    meta: {
+      ...meta,
+      droppedIds: result.droppedIds,
+      quotesVerified: result.papers.filter((p) => p.quoteVerified).length,
+    },
   };
 }
 

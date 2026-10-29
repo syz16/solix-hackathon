@@ -1,0 +1,12 @@
+[
+  { "drug": "Hydroxychloroquine", "disease": "COVID-19", "mechanism": "Inhibition of viral entry via endosomal pH", "expected": ["challenged"], "why": "RECOVERY and other large RCTs found no mortality benefit" },
+  { "drug": "Ivermectin", "disease": "COVID-19", "mechanism": "Inhibition of viral replication", "expected": ["challenged"], "why": "TOGETHER and ACTIV-6 RCTs found no benefit" },
+  { "drug": "Vitamin E", "disease": "Prostate cancer", "mechanism": "Antioxidant protection against oxidative DNA damage", "expected": ["challenged"], "why": "SELECT trial found no prevention benefit (increased risk)" },
+  { "drug": "Beta-carotene", "disease": "Lung cancer", "mechanism": "Antioxidant chemoprevention", "expected": ["challenged"], "why": "ATBC and CARET trials found increased incidence in smokers" },
+  { "drug": "Estrogen", "disease": "Coronary heart disease", "mechanism": "Improved lipid profile and vascular protection", "expected": ["challenged"], "why": "WHI and HERS trials found no cardioprotection" },
+  { "drug": "Sildenafil", "disease": "Pulmonary arterial hypertension", "mechanism": "PDE5 inhibition causing pulmonary vasodilation", "expected": ["not_challenged"], "why": "Approved after positive RCTs (SUPER-1)" },
+  { "drug": "Thalidomide", "disease": "Multiple myeloma", "mechanism": "Immunomodulatory and anti-angiogenic activity", "expected": ["not_challenged"], "why": "Approved; survival benefit in RCTs" },
+  { "drug": "Propranolol", "disease": "Infantile hemangioma", "mechanism": "Beta-adrenergic blockade causing vasoconstriction", "expected": ["not_challenged"], "why": "First-line therapy after a positive RCT" },
+  { "drug": "Metformin", "disease": "Glioblastoma", "mechanism": "Altered cellular metabolism", "expected": ["insufficient", "challenged"], "why": "Preclinical signal, no conclusive clinical evidence" },
+  { "drug": "Zorvaquintide", "disease": "Glioblastoma", "mechanism": "Kinase inhibition", "expected": ["insufficient"], "why": "Made-up drug; checks the tool does not invent evidence" }
+]

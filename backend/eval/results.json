@@ -1,0 +1,212 @@
+{
+  "summary": {
+    "verdictAccuracy": "7/10",
+    "quotesVerified": "71/72",
+    "hallucinatedIdsCaught": 0,
+    "testsGrounded": "9/9"
+  },
+  "results": [
+    {
+      "drug": "Hydroxychloroquine",
+      "disease": "COVID-19",
+      "mechanism": "Inhibition of viral entry via endosomal pH",
+      "expected": [
+        "challenged"
+      ],
+      "why": "RECOVERY and other large RCTs found no mortality benefit",
+      "actual": "insufficient",
+      "match": false,
+      "papers": 8,
+      "supports": 1,
+      "challenges": 1,
+      "strongDesign": 6,
+      "quotesVerified": 8,
+      "droppedIds": 0,
+      "testGrounded": true,
+      "question": "Does HCQ reduce nasopharyngeal viral load in a randomized setting, and does this track with a measurable endosomal pH shift in target airway cells?",
+      "seconds": 34
+    },
+    {
+      "drug": "Ivermectin",
+      "disease": "COVID-19",
+      "mechanism": "Inhibition of viral replication",
+      "expected": [
+        "challenged"
+      ],
+      "why": "TOGETHER and ACTIV-6 RCTs found no benefit",
+      "actual": "not_challenged",
+      "match": false,
+      "papers": 8,
+      "supports": 3,
+      "challenges": 0,
+      "strongDesign": 6,
+      "quotesVerified": 7,
+      "droppedIds": 0,
+      "testGrounded": true,
+      "question": "Does ivermectin reduce infectious SARS-CoV-2 (culture-positive titer), not just RNA load, versus placebo in symptomatic early-stage patients?",
+      "seconds": 27
+    },
+    {
+      "drug": "Vitamin E",
+      "disease": "Prostate cancer",
+      "mechanism": "Antioxidant protection against oxidative DNA damage",
+      "expected": [
+        "challenged"
+      ],
+      "why": "SELECT trial found no prevention benefit (increased risk)",
+      "actual": "challenged",
+      "match": true,
+      "papers": 8,
+      "supports": 1,
+      "challenges": 3,
+      "strongDesign": 6,
+      "quotesVerified": 8,
+      "droppedIds": 0,
+      "testGrounded": true,
+      "question": "Does alpha-tocopherol reduce a direct biomarker of oxidative DNA damage (8-oxo-dG) in prostate tissue or urine compared with placebo, and does this depend on smoking status?",
+      "seconds": 24
+    },
+    {
+      "drug": "Beta-carotene",
+      "disease": "Lung cancer",
+      "mechanism": "Antioxidant chemoprevention",
+      "expected": [
+        "challenged"
+      ],
+      "why": "ATBC and CARET trials found increased incidence in smokers",
+      "actual": "challenged",
+      "match": true,
+      "papers": 8,
+      "supports": 0,
+      "challenges": 6,
+      "strongDesign": 6,
+      "quotesVerified": 8,
+      "droppedIds": 0,
+      "testGrounded": true,
+      "question": "Does beta-carotene supplementation in smokers shift antioxidant/oxidative-stress markers in the direction the antioxidant mechanism predicts, and do those shifts track lung cancer risk?",
+      "seconds": 19
+    },
+    {
+      "drug": "Estrogen",
+      "disease": "Coronary heart disease",
+      "mechanism": "Improved lipid profile and vascular protection",
+      "expected": [
+        "challenged"
+      ],
+      "why": "WHI and HERS trials found no cardioprotection",
+      "actual": "challenged",
+      "match": true,
+      "papers": 8,
+      "supports": 3,
+      "challenges": 5,
+      "strongDesign": 4,
+      "quotesVerified": 8,
+      "droppedIds": 0,
+      "testGrounded": true,
+      "question": "Does early-initiated estrogen reduce coronary atherosclerosis progression, and does any effect operate through lipid change?",
+      "seconds": 24
+    },
+    {
+      "drug": "Sildenafil",
+      "disease": "Pulmonary arterial hypertension",
+      "mechanism": "PDE5 inhibition causing pulmonary vasodilation",
+      "expected": [
+        "not_challenged"
+      ],
+      "why": "Approved after positive RCTs (SUPER-1)",
+      "actual": "not_challenged",
+      "match": true,
+      "papers": 8,
+      "supports": 3,
+      "challenges": 1,
+      "strongDesign": 4,
+      "quotesVerified": 8,
+      "droppedIds": 0,
+      "testGrounded": true,
+      "question": "Does the change in pulmonary vascular resistance under sildenafil track the change in 6-minute walk distance, and is that association absent for a non-vasodilatory effect?",
+      "seconds": 22
+    },
+    {
+      "drug": "Thalidomide",
+      "disease": "Multiple myeloma",
+      "mechanism": "Immunomodulatory and anti-angiogenic activity",
+      "expected": [
+        "not_challenged"
+      ],
+      "why": "Approved; survival benefit in RCTs",
+      "actual": "insufficient",
+      "match": false,
+      "papers": 8,
+      "supports": 3,
+      "challenges": 2,
+      "strongDesign": 6,
+      "quotesVerified": 8,
+      "droppedIds": 0,
+      "testGrounded": true,
+      "question": "Does thalidomide plus dexamethasone outperform dexamethasone alone in relapsed myeloma, and does any benefit track with marrow microvessel density change and CRBN expression?",
+      "seconds": 22
+    },
+    {
+      "drug": "Propranolol",
+      "disease": "Infantile hemangioma",
+      "mechanism": "Beta-adrenergic blockade causing vasoconstriction",
+      "expected": [
+        "not_challenged"
+      ],
+      "why": "First-line therapy after a positive RCT",
+      "actual": "not_challenged",
+      "match": true,
+      "papers": 8,
+      "supports": 5,
+      "challenges": 0,
+      "strongDesign": 2,
+      "quotesVerified": 8,
+      "droppedIds": 0,
+      "testGrounded": true,
+      "question": "Does lesional perfusion fall before and in proportion to regression, which would be expected if vasoconstriction drives the effect?",
+      "seconds": 21
+    },
+    {
+      "drug": "Metformin",
+      "disease": "Glioblastoma",
+      "mechanism": "Altered cellular metabolism",
+      "expected": [
+        "insufficient",
+        "challenged"
+      ],
+      "why": "Preclinical signal, no conclusive clinical evidence",
+      "actual": "insufficient",
+      "match": true,
+      "papers": 8,
+      "supports": 2,
+      "challenges": 2,
+      "strongDesign": 3,
+      "quotesVerified": 8,
+      "droppedIds": 0,
+      "testGrounded": true,
+      "question": "Is metformin's growth inhibition in GBM cells mediated by the metabolic shift, or does it persist when that shift is blocked?",
+      "seconds": 23
+    },
+    {
+      "drug": "Zorvaquintide",
+      "disease": "Glioblastoma",
+      "mechanism": "Kinase inhibition",
+      "expected": [
+        "insufficient"
+      ],
+      "why": "Made-up drug; checks the tool does not invent evidence",
+      "actual": "insufficient",
+      "match": true,
+      "papers": 0,
+      "supports": 0,
+      "challenges": 0,
+      "strongDesign": 0,
+      "quotesVerified": 0,
+      "droppedIds": 0,
+      "testGrounded": false,
+      "question": "Does any preclinical evidence support this drug-disease link?",
+      "seconds": 1
+    }
+  ],
+  "ranAt": "2026-10-29T01:06:09.381Z"
+}
